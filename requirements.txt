@@ -2,3 +2,5 @@ fastapi
 typing
 pydantic
 uvicorn
+gunicorn
+starlette
