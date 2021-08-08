@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Path
+from fastapi.responses import RedirectResponse
 from schemas import *
 
 
@@ -17,6 +18,11 @@ bhlog = FastAPI(title="Bhlog API",
                 version="0.1.1",
                 docs_url="/bhlog_api/v1.1/documentation"
                 )
+
+
+@bhlog.get("/")
+async def redirect():
+    return RedirectResponse("/bhlog_api/v1.1/documentation")
 
 
 @bhlog.get("/bhlog_api/v1.1/home/", description="**Welcome to Bhlog API**")
