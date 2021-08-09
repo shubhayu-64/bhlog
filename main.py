@@ -60,8 +60,9 @@ async def Add_Bhlog(bhlog: Bhlog_data):
 
 @bhlog.put("/bhlog_api/v1.1/update_bhlog", response_model=Bhlog_response, description="**Update your bhlogs** from here.\nCheck the **Bhlog Data Schema** for more information")
 async def update_bhlog(bhlog: Bhlog_response):
-    if not await ifBhlogExists(id):
+    if not await ifBhlogExists(bhlog.id):
         raise HTTPException(status_code=404, detail="Bhlog not found")
+
     update = await updateBhlog(bhlog)
     return update
 
