@@ -1,6 +1,7 @@
-from fastapi import FastAPI, Path
+from fastapi import FastAPI, Path, HTTPException
 from fastapi.responses import RedirectResponse
 from schemas import *
+from database import *
 
 
 desc = """
@@ -35,40 +36,42 @@ async def home():
 
 @bhlog.get("/bhlog_api/v1.1/bhlogs", response_model=List[Bhlog_response], description="Shows all Bhlogs avilable. Injoy <3")
 async def get_all_bhlogs():
-    return DB
+    bhlogs = await getAllBhlogs()
+    return bhlogs
 
 
-@bhlog.get("/bhlog_api/v1.1/bhlog/{id}", response_model=Bhlog_response, response_model_exclude={"id"}, description="Shows Bhlog of given ID. Injoy <3")
+@bhlog.get("/bhlog_api/v1.1/bhlog/{id}", response_model=Bhlog_response, description="Shows Bhlog of given ID. Injoy <3")
 async def get_bhlog(id: int = Path(..., ge=1, title="Bhlog ID",
                                    description="ID of the bhlog", example="16")):
-    id = id-1
-    return DB[id]
+    if not await ifBhlogExists(id):
+        raise HTTPException(status_code=404, detail="Bhlog not found")
+    bhlog = await getBhlog(id)
+    return bhlog
 
 
-@ bhlog.put("/bhlog_api/v1.1/add_bhlog", response_model=Bhlog_response, description="**Add your bhlogs** from here.\nCheck the **Bhlog Data Schema** for more information")
+@bhlog.put("/bhlog_api/v1.1/add_bhlog", response_model=Bhlog_response, description="**Add your bhlogs** from here.\nCheck the **Bhlog Data Schema** for more information")
 async def Add_Bhlog(bhlog: Bhlog_data):
-    cur_id = len(DB) + 1
+    cur_id = await set_id()
     time = datetime.now()
     data = Bhlog_DB(**bhlog.dict(), id=cur_id, created_at=time)
-    DB.append(data)
+    data = await add_new_bhlog(data)
     return data
 
 
-@ bhlog.put("/bhlog_api/v1.1/update_bhlog", response_model=Bhlog_response, description="**Update your bhlogs** from here.\nCheck the **Bhlog Data Schema** for more information")
-async def update_bhlog(bhlog: Bhlog_data, id: int = Path(..., ge=1, title="Bhlog ID",
-                                                         description="ID of the bhlog", example="16")):
-    data = DB[id-1]
-    data.title = bhlog.title
-    data.content = bhlog.content
-    data.feature_image = bhlog.feature_image
-    data.tags = bhlog.tags
-    data.updated_at = datetime.now()
-    return data
+@bhlog.put("/bhlog_api/v1.1/update_bhlog", response_model=Bhlog_response, description="**Update your bhlogs** from here.\nCheck the **Bhlog Data Schema** for more information")
+async def update_bhlog(bhlog: Bhlog_response):
+    if not await ifBhlogExists(id):
+        raise HTTPException(status_code=404, detail="Bhlog not found")
+    update = await updateBhlog(bhlog)
+    return update
 
 
-@ bhlog.delete("/bhlog_api/v1.1/delete_bhlog/{id}", description="Delete Bhlog based on ID")
+@bhlog.delete("/bhlog_api/v1.1/delete_bhlog/{id}", description="Delete Bhlog based on ID")
 async def delete_bhlog(id: int = Path(..., ge=1, title="Bhlog ID",
                                       description="ID of the bhlog", example="16")):
-    id = id-1
-    DB.pop(id)
-    return {"Bhlog was deleted"}
+    if not await ifBhlogExists(id):
+        raise HTTPException(status_code=404, detail="Bhlog not found")
+    response = await deleteBhlog(id)
+    return {
+        "Message": response
+    }

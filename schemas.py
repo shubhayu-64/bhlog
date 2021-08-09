@@ -24,4 +24,4 @@ class Bhlog_DB(Bhlog_data):
 
 class Bhlog_response(Bhlog_data):
     id: int = Field(..., ge=1, title="Bhlog ID",
-                    description="ID of the bhlog", example="16")
+                    description="ID of the bhlog", example="16", alias="_id")
